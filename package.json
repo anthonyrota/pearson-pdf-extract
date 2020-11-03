@@ -1,0 +1,10 @@
+{
+  "name": "pearson-pdf-extract",
+  "dependencies": {
+    "@types/node-fetch": "^2.5.7",
+    "@types/pdfkit": "^0.10.6",
+    "node-fetch": "^2.6.1",
+    "p-limit": "^3.0.2",
+    "pdfkit": "^0.11.0"
+  }
+}
