@@ -103,21 +103,20 @@ async function getTextForPage(pageNumber) {
         throw new Error(`response error ${json.error}`);
     }
     const { texts } = JSON.parse(json.TextPageData);
-    return texts.map(({ cs }) => ({
-        characters: cs.map((c) => {
-            if (c.length !== 5) {
-                throw new Error('invalid cs');
+    return texts.map(({ cs: jsonCharacters }) => ({
+        characters: jsonCharacters.map((jsonChar) => {
+            if (jsonChar.length !== 5) {
+                throw new Error('invalid json char');
             }
-            const [o, p, q, r, x] = c;
+            const [left, top, width, height, charCode] = jsonChar;
             const char = {
                 charRect: {
-                    left: o,
-                    top: p,
-                    right: o + q,
-                    bottom: p + r,
+                    left,
+                    top,
+                    right: left + width,
+                    bottom: top + height,
                 },
-                charCode: x,
-                charText: String.fromCharCode(x),
+                charText: String.fromCharCode(charCode),
             };
             normalizeRectangle(char.charRect);
             return char;
