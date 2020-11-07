@@ -1,13 +1,13 @@
 'use strict';
 
-const pdfkit = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const progress = require('cli-progress');
+const colors = require('colors');
+const imageSize = require('image-size');
 const fetch = require('node-fetch');
 const pLimit = require('p-limit');
-const imageSize = require('image-size');
-const colors = require('colors');
-const progress = require('cli-progress');
+const pdfkit = require('pdfkit');
 
 const args = process.argv.slice(2);
 const debugTextIndex = args.indexOf('--debug-text');
@@ -76,11 +76,19 @@ if (args.length !== 2) {
 }
 const [foxitAssetUrl, relativeOutPath] = args;
 
-var fNormalize = function (a) {
-    var b;
-    a.left > a.right && ((b = a.left), (a.left = a.right), (a.right = b));
-    a.bottom > a.top && ((b = a.bottom), (a.bottom = a.top), (a.top = b));
-};
+function normalizeRectangle(rectangle) {
+    let temp;
+    if (rectangle.left > rectangle.right) {
+        temp = rectangle.left;
+        rectangle.left = rectangle.right;
+        rectangle.right = temp;
+    }
+    if (rectangle.bottom > rectangle.top) {
+        temp = rectangle.bottom;
+        rectangle.bottom = rectangle.top;
+        rectangle.top = temp;
+    }
+}
 
 async function getTextForPage(pageNumber) {
     const res = await fetch(
@@ -94,39 +102,27 @@ async function getTextForPage(pageNumber) {
     if (json.error !== 0) {
         throw new Error(`response error ${json.error}`);
     }
-    var { texts } = JSON.parse(json.TextPageData);
-    const textObjectList = texts.map(
-        ({ li: lineIndex, oi: objIndex, ci: charIndex, cs, mt, wm }) => {
-            const thing = {
-                lineIndex,
-                objIndex,
-                charIndex,
-                characters: cs.map((c) => {
-                    if (c.length !== 5) {
-                        throw new Error('invalid cs');
-                    }
-                    const [o, p, q, r, x] = c;
-                    const char = {
-                        charRect: {
-                            left: o,
-                            top: p,
-                            right: o + q,
-                            bottom: p + r,
-                        },
-                        charCode: x,
-                        charText: String.fromCharCode(x),
-                    };
-                    fNormalize(char.charRect);
-                    return char;
-                }),
-            };
-            if ('undefined' != typeof wm && null != typeof wm) {
-                thing.writingMode = wm;
+    const { texts } = JSON.parse(json.TextPageData);
+    return texts.map(({ cs }) => ({
+        characters: cs.map((c) => {
+            if (c.length !== 5) {
+                throw new Error('invalid cs');
             }
-            return thing;
-        },
-    );
-    return textObjectList;
+            const [o, p, q, r, x] = c;
+            const char = {
+                charRect: {
+                    left: o,
+                    top: p,
+                    right: o + q,
+                    bottom: p + r,
+                },
+                charCode: x,
+                charText: String.fromCharCode(x),
+            };
+            normalizeRectangle(char.charRect);
+            return char;
+        }),
+    }));
 }
 
 async function getImageForPage(pageNumber) {
