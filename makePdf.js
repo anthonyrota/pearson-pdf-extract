@@ -34,29 +34,34 @@ if (fontFamilyIndex !== -1) {
     }
     args.splice(fontFamilyIndex, 2);
 }
-const singleLetterWordPaddingIndex = args.indexOf(
-    '--single-letter-word-padding',
+const singleCharacterWordPaddingIndex = args.indexOf(
+    '--single-character-word-padding',
 );
-let singleLetterWordPadding;
-if (singleLetterWordPaddingIndex !== -1) {
-    singleLetterWordPadding = +args[singleLetterWordPaddingIndex + 1];
-    if (Number.isNaN(singleLetterWordPadding)) {
+let singleCharacterWordPadding;
+if (singleCharacterWordPaddingIndex !== -1) {
+    singleCharacterWordPadding = +args[singleCharacterWordPaddingIndex + 1];
+    if (Number.isNaN(singleCharacterWordPadding)) {
         throw new Error(
-            `--single-letter-word-padding: ${singleLetterWordPadding} is not a number`,
+            `--single-character-word-padding: ${singleCharacterWordPadding} is not a number`,
         );
     }
-    args.splice(singleLetterWordPaddingIndex, 2);
+    args.splice(singleCharacterWordPaddingIndex, 2);
 }
 const imageOnlyIndex = args.indexOf('--image-only');
 let imageOnly = false;
 if (imageOnlyIndex !== -1) {
     imageOnly = true;
     args.splice(imageOnlyIndex, 1);
-    if (fontFamily) {
+    if (fontFamily !== undefined) {
         throw new Error('--font cannot be used with --image-only');
     }
     if (debugText) {
-        throw new Error('--font cannot be used with --debug-text');
+        throw new Error('--font cannot be used with --image-only');
+    }
+    if (singleCharacterWordPadding !== undefined) {
+        throw new Error(
+            '--single-character-word-padding cannot be used with --image-only',
+        );
     }
 }
 for (const arg of args) {
@@ -279,10 +284,11 @@ async function main() {
                                 wordHeight / 2,
                             { ...textOpts, characterSpacing },
                         );
-                        if (singleLetterWordPadding !== undefined) {
+                        if (singleCharacterWordPadding !== undefined) {
                             if (word.length === 1) {
                                 wordStartOffset +=
-                                    measuredWordWidth * singleLetterWordPadding;
+                                    measuredWordWidth *
+                                    singleCharacterWordPadding;
                             } else {
                                 wordStartOffset = 0;
                             }
