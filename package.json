@@ -1,7 +1,7 @@
 {
     "name": "pearson-pdf-extract",
     "dependencies": {
-        "cli-progress": "3.8.2",
+        "cli-progress": "3.11.2",
         "colors": "1.4.0",
         "image-size": "0.9.3",
         "node-fetch": "2.6.1",
